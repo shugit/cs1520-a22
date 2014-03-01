@@ -1,0 +1,749 @@
+From ae2a393d073e80907ce1038343470d3628231e8a Mon Sep 17 00:00:00 2001
+From: Nick Farnan <nlf4@pitt.edu>
+Date: Tue, 18 Feb 2014 14:31:19 -0500
+Subject: [PATCH 1/4] another test
+
+---
+ app/Controller/PostsController.php |   70 +++++++++++++++++++++++++++++
+ app/Model/Post.php                 |    8 +++
+ app/View/Posts/add.ctp             |    7 +++
+ app/View/Posts/edit.ctp            |    8 +++
+ app/View/Posts/index.ctp           |   43 ++++++++++++++++++
+ app/View/Posts/view.ctp            |    7 +++
+ 6 files changed, 143 insertions(+), 0 deletions(-)
+ create mode 100644 app/Controller/PostsController.php
+ create mode 100644 app/Model/Post.php
+ create mode 100644 app/View/Posts/add.ctp
+ create mode 100644 app/View/Posts/edit.ctp
+ create mode 100644 app/View/Posts/index.ctp
+ create mode 100644 app/View/Posts/view.ctp
+
+diff --git a/app/Controller/PostsController.php b/app/Controller/PostsController.php
+new file mode 100644
+index 0000000..2eb08f6
+--- /dev/null
++++ b/app/Controller/PostsController.php
+@@ -0,0 +1,70 @@
++<?php
++class PostsController extends AppController{
++	public $helpers = array('Html', 'Form');
++
++	public function index() {
++		$this->set('posts', $this->Post->find('all'));
++	}
++
++	public function add() {
++        	if ($this->request->is('post')) {
++            	$this->Post->create();
++            	if ($this->Post->save($this->request->data)) {
++                	$this->Session->setFlash(__('Your post has been saved.'));
++                	return $this->redirect(array('action' => 'index'));
++            	}
++            	$this->Session->setFlash(__('Unable to add your post.'));
++        	}
++    	}
++
++	public function view($id = null) {
++		if (!$id) {
++           		 throw new NotFoundException('Invalid post1');
++        	}
++
++		$post = $this->Post->findById($id);
++		if (!$post) {
++			 throw new NotFoundException('Invalid post2');
++          	}
++
++		$this->set('post', $post);
++	}
++
++	public function edit($id = null) {
++		if (!$id) {
++        		throw new NotFoundException(__('Invalid post'));
++    		}
++
++    		$post = $this->Post->findById($id);
++    		if (!$post) {
++        		throw new NotFoundException(__('Invalid post'));
++    		}
++
++		if ($this->request->is(array('post', 'put'))) {
++        		$this->Post->id = $id;
++        		if ($this->Post->save($this->request->data)) {
++            			$this->Session->setFlash(__('Your post has been updated.'));
++            			return $this->redirect(array('action' => 'index'));
++        		}
++        		$this->Session->setFlash(__('Unable to update your post.'));
++    		}
++
++		if (!$this->request->data) {
++     			$this->request->data = $post;
++    		}
++	}
++
++	public function delete($id) {
++    		if ($this->request->is('get')) {
++        		throw new MethodNotAllowedException();
++    		}
++
++		if ($this->Post->delete($id)) {
++        		$this->Session->setFlash(
++            		__('The post with id: %s has been deleted.', h($id))
++        		);
++        		return $this->redirect(array('action' => 'index'));
++    		}
++	}
++}
++?>
+diff --git a/app/Model/Post.php b/app/Model/Post.php
+new file mode 100644
+index 0000000..4c797c5
+--- /dev/null
++++ b/app/Model/Post.php
+@@ -0,0 +1,8 @@
++<?php
++class Post extends AppModel{
++	public $validate = array(
++		'title' => array('rule' => 'notEmpty'),
++		'body' => array('rule' => 'notEmpty')
++	);
++}
++?>
+diff --git a/app/View/Posts/add.ctp b/app/View/Posts/add.ctp
+new file mode 100644
+index 0000000..c36d35e
+--- /dev/null
++++ b/app/View/Posts/add.ctp
+@@ -0,0 +1,7 @@
++<h1>Add Post</h1>
++<?php
++echo $this->Form->create('Post');
++echo $this->Form->input('title');
++echo $this->Form->input('body', array('rows' => '3'));
++echo $this->Form->end('Save Post');
++?>
+diff --git a/app/View/Posts/edit.ctp b/app/View/Posts/edit.ctp
+new file mode 100644
+index 0000000..49f3cc0
+--- /dev/null
++++ b/app/View/Posts/edit.ctp
+@@ -0,0 +1,8 @@
++<h1>Edit Post</h1>
++<?php
++echo $this->Form->create('Post');
++echo $this->Form->input('title');
++echo $this->Form->input('body', array('rows' => '3'));
++echo $this->Form->input('id', array('type' => 'hidden'));
++echo $this->Form->end('Save Post');
++?>
+diff --git a/app/View/Posts/index.ctp b/app/View/Posts/index.ctp
+new file mode 100644
+index 0000000..b4729b0
+--- /dev/null
++++ b/app/View/Posts/index.ctp
+@@ -0,0 +1,43 @@
++<?php print_r($posts); ?>
++<h1>Blog posts</h1>
++
++<?php
++    echo $this->Html->link('Add Post', array('controller' => 'posts', 'action' => 'add'));
++?>
++
++<table>
++    <tr>
++        <th>Id</th>
++        <th>Title</th>
++        <th>Created</th>
++    </tr>
++
++    <!-- Here is where we loop through our $posts array, printing out post info -->
++
++    <?php foreach ($posts as $post): ?>
++    <tr>
++        <td><?php echo $post['Post']['id']; ?></td>
++        <td>
++            <?php echo $this->Html->link($post['Post']['title'],
++array('controller' => 'posts', 'action' => 'view', $post['Post']['id'])); ?>
++        </td>
++	<td>
++            <?php
++                echo $this->Html->link(
++                    'Edit',
++                    array('action' => 'edit', $post['Post']['id'])
++                );
++            ?>
++	    <?php
++                echo $this->Form->postLink(
++                    'Delete',
++                    array('action' => 'delete', $post['Post']['id']),
++                    array('confirm' => 'Are you sure?')
++                );
++            ?>
++        </td>
++        <td><?php echo $post['Post']['created']; ?></td>
++    </tr>
++    <?php endforeach; ?>
++    <?php unset($post); ?>
++</table>
+diff --git a/app/View/Posts/view.ctp b/app/View/Posts/view.ctp
+new file mode 100644
+index 0000000..5a42379
+--- /dev/null
++++ b/app/View/Posts/view.ctp
+@@ -0,0 +1,7 @@
++<?php print_r($post); ?>
++
++<h1><?php echo h($post['Post']['title']); ?></h1>
++
++<p><small>Created: <?php echo $post['Post']['created']; ?></small></p>
++
++<p><?php echo h($post['Post']['body']); ?></p>
+--
+1.7.1
+
+
+From 5db346acee411c6b2000f632faa2f75ea70f99a5 Mon Sep 17 00:00:00 2001
+From: Nick Farnan <nlf4@pitt.edu>
+Date: Mon, 24 Feb 2014 19:23:01 -0500
+Subject: [PATCH 2/4] Built a working example of using multiple models together.
+
+---
+ app/Controller/PostsController.php |   33 ++++++++++++++++++++++-------
+ app/Controller/UsersController.php |   41 ++++++++++++++++++++++++++++++++++++
+ app/Model/Post.php                 |    1 +
+ app/Model/User.php                 |    8 +++++++
+ app/View/Posts/index.ctp           |   41 ++++++++++++++++++++++-------------
+ app/View/Posts/view.ctp            |    1 +
+ app/View/Users/add.ctp             |    6 +++++
+ app/View/Users/index.ctp           |   30 ++++++++++++++++++++++++++
+ 8 files changed, 138 insertions(+), 23 deletions(-)
+ create mode 100644 app/Controller/UsersController.php
+ create mode 100644 app/Model/User.php
+ create mode 100644 app/View/Users/add.ctp
+ create mode 100644 app/View/Users/index.ctp
+
+diff --git a/app/Controller/PostsController.php b/app/Controller/PostsController.php
+index 2eb08f6..0b555c5 100644
+--- a/app/Controller/PostsController.php
++++ b/app/Controller/PostsController.php
+@@ -4,17 +4,27 @@ class PostsController extends AppController{
+
+ 	public function index() {
+ 		$this->set('posts', $this->Post->find('all'));
++		$this->set('userid', $this->Session->read('userid'));
++		$this->set('username', $this->Post->User->findById($this->Session->read('userid')));
+ 	}
+
+ 	public function add() {
+-        	if ($this->request->is('post')) {
+-            	$this->Post->create();
+-            	if ($this->Post->save($this->request->data)) {
+-                	$this->Session->setFlash(__('Your post has been saved.'));
+-                	return $this->redirect(array('action' => 'index'));
+-            	}
+-            	$this->Session->setFlash(__('Unable to add your post.'));
+-        	}
++		$userid = $this->Session->read('userid');
++		if ($userid) {
++        		if ($this->request->is('post')) {
++				$this->request->data['Post']['user_id'] = $userid;
++            			$this->Post->create();
++            			if ($this->Post->save($this->request->data)) {
++                			$this->Session->setFlash(__('Your post has been saved.'));
++                			return $this->redirect(array('action' => 'index'));
++            			}
++            			$this->Session->setFlash(__('Unable to add your post.'));
++        		}
++		}
++		else {
++			$this->Session->setFlash(__('You must be logged in to add a post.'));
++			return $this->redirect(array('action' => 'index'));
++		}
+     	}
+
+ 	public function view($id = null) {
+@@ -40,6 +50,13 @@ class PostsController extends AppController{
+         		throw new NotFoundException(__('Invalid post'));
+     		}
+
++		$userid = $this->Session->read('userid');
++		if ($post['Post']['user_id'] != $userid)
++		{
++			$this->Session->setFlash(__('You can not edit that post.'));
++			return $this->redirect(array('action' => 'index'));
++		}
++
+ 		if ($this->request->is(array('post', 'put'))) {
+         		$this->Post->id = $id;
+         		if ($this->Post->save($this->request->data)) {
+diff --git a/app/Controller/UsersController.php b/app/Controller/UsersController.php
+new file mode 100644
+index 0000000..52b09c0
+--- /dev/null
++++ b/app/Controller/UsersController.php
+@@ -0,0 +1,41 @@
++<?php
++class UsersController extends AppController{
++	public $helpers = array('Html', 'Form');
++
++	public function index() {
++		$this->set('users', $this->User->find('all'));
++	}
++
++	public function add() {
++        	if ($this->request->is('post')) {
++            	$this->User->create();
++            	if ($this->User->save($this->request->data)) {
++                	$this->Session->setFlash(__('Your user has been created'));
++                	return $this->redirect(array('action' => 'index'));
++            	}
++            	$this->Session->setFlash(__('Unable to create a new user!'));
++        	}
++    	}
++
++	public function login($id = null) {
++		if (!$id) {
++			throw new NotFoundException('No ID Provided');
++		}
++
++		$user = $this->User->findById($id);
++		if (!$user) {
++			throw New NotFoundException('Invalid ID');
++		}
++
++		$this->Session->write('userid', $id);
++		$this->Session->setFlash(__('Successfully logged in as ' . $user['User']['username'] . '!'));
++		return $this->redirect(array('controller' => 'posts', 'action' => 'index'));
++	}
++
++	public function logout() {
++		$this->Session->delete('userid');
++		$this->Session->setFlash(__('Successfully logged out.'));
++		return $this->redirect(array('controller' => 'posts', 'action' => 'index'));
++	}
++}
++?>
+diff --git a/app/Model/Post.php b/app/Model/Post.php
+index 4c797c5..156de98 100644
+--- a/app/Model/Post.php
++++ b/app/Model/Post.php
+@@ -4,5 +4,6 @@ class Post extends AppModel{
+ 		'title' => array('rule' => 'notEmpty'),
+ 		'body' => array('rule' => 'notEmpty')
+ 	);
++	public $belongsTo = 'User';
+ }
+ ?>
+diff --git a/app/Model/User.php b/app/Model/User.php
+new file mode 100644
+index 0000000..a35c58b
+--- /dev/null
++++ b/app/Model/User.php
+@@ -0,0 +1,8 @@
++<?php
++class User extends AppModel{
++	public $validate = array(
++		'username' => array('rule' => 'notEmpty')
++	);
++	public $hasMany = 'Post';
++}
++?>
+diff --git a/app/View/Posts/index.ctp b/app/View/Posts/index.ctp
+index b4729b0..d1149c3 100644
+--- a/app/View/Posts/index.ctp
++++ b/app/View/Posts/index.ctp
+@@ -1,14 +1,30 @@
+-<?php print_r($posts); ?>
++<?php
++	foreach ($posts as $post) {
++		print_r($post);
++		echo "<br />";
++	}
++?>
+ <h1>Blog posts</h1>
+
+ <?php
+-    echo $this->Html->link('Add Post', array('controller' => 'posts', 'action' => 'add'));
++	echo $this->Html->link('Add Post', array('controller' => 'posts', 'action' => 'add'));
++	echo "<br />";
++
++	if (!$userid) {
++		echo $this->Html->link('Login', array('controller' => 'users', 'action' => 'index'));
++	}
++	else {
++		echo "Logged in as " . $username['User']['username'];
++		echo "<br />";
++		echo $this->Html->link('Log out', array('controller' => 'users', 'action' => 'logout'));
++	}
+ ?>
+
+ <table>
+     <tr>
+         <th>Id</th>
+         <th>Title</th>
++	<th>Options</th>
+         <th>Created</th>
+     </tr>
+
+@@ -18,22 +34,17 @@
+     <tr>
+         <td><?php echo $post['Post']['id']; ?></td>
+         <td>
+-            <?php echo $this->Html->link($post['Post']['title'],
+-array('controller' => 'posts', 'action' => 'view', $post['Post']['id'])); ?>
++            <?php echo $this->Html->link($post['Post']['title'], array('controller' => 'posts', 'action' => 'view', $post['Post']['id'])); ?>
+         </td>
+ 	<td>
+             <?php
+-                echo $this->Html->link(
+-                    'Edit',
+-                    array('action' => 'edit', $post['Post']['id'])
+-                );
+-            ?>
+-	    <?php
+-                echo $this->Form->postLink(
+-                    'Delete',
+-                    array('action' => 'delete', $post['Post']['id']),
+-                    array('confirm' => 'Are you sure?')
+-                );
++		if ($userid == $post['Post']['user_id']) {
++                	echo $this->Html->link('Edit', array('action' => 'edit', $post['Post']['id']));
++                	echo $this->Form->postLink('Delete', array('action' => 'delete', $post['Post']['id']), array('confirm' => 'Are you sure?'));
++		}
++		else {
++			echo "&nbsp;";
++		}
+             ?>
+         </td>
+         <td><?php echo $post['Post']['created']; ?></td>
+diff --git a/app/View/Posts/view.ctp b/app/View/Posts/view.ctp
+index 5a42379..0924452 100644
+--- a/app/View/Posts/view.ctp
++++ b/app/View/Posts/view.ctp
+@@ -1,6 +1,7 @@
+ <?php print_r($post); ?>
+
+ <h1><?php echo h($post['Post']['title']); ?></h1>
++<h2><?php echo h($post['User']['username']); ?></h2>
+
+ <p><small>Created: <?php echo $post['Post']['created']; ?></small></p>
+
+diff --git a/app/View/Users/add.ctp b/app/View/Users/add.ctp
+new file mode 100644
+index 0000000..c51e821
+--- /dev/null
++++ b/app/View/Users/add.ctp
+@@ -0,0 +1,6 @@
++<h1>Create a new user</h1>
++<?php
++echo $this->Form->create('User');
++echo $this->Form->input('username');
++echo $this->Form->end('Create User');
++?>
+diff --git a/app/View/Users/index.ctp b/app/View/Users/index.ctp
+new file mode 100644
+index 0000000..1f383a1
+--- /dev/null
++++ b/app/View/Users/index.ctp
+@@ -0,0 +1,30 @@
++<?php
++	foreach($users as $user) {
++		print_r($user);
++		echo "<br />";
++	}
++?>
++<h1>Select a User</h1>
++
++<?php
++    echo $this->Html->link('Create New User', array('controller' => 'users', 'action' => 'add'));
++?>
++
++<table>
++    <tr>
++        <th>Id</th>
++        <th>Username</th>
++	<th>Created</th>
++    </tr>
++
++    <?php foreach ($users as $user): ?>
++    <tr>
++        <td><?php echo $user['User']['id']; ?></td>
++        <td>
++            <?php echo $this->Html->link($user['User']['username'], array('controller' => 'users', 'action' => 'login', $user['User']['id'])); ?>
++        </td>
++        <td><?php echo $user['User']['created']; ?></td>
++    </tr>
++    <?php endforeach; ?>
++    <?php unset($user); ?>
++</table>
+--
+1.7.1
+
+
+From 1ce367240463d824d3ef19b61b58635458e1ba17 Mon Sep 17 00:00:00 2001
+From: Nick Farnan <nlf4@pitt.edu>
+Date: Thu, 27 Feb 2014 01:35:57 -0500
+Subject: [PATCH 3/4] Actual user support added
+
+---
+ app/Config/core.php                |    4 ++--
+ app/Controller/AppController.php   |   12 ++++++++++++
+ app/Controller/PostsController.php |    8 ++++----
+ app/Controller/UsersController.php |   24 ++++++++----------------
+ app/Model/User.php                 |    3 ++-
+ app/View/Posts/index.ctp           |    6 ++++--
+ app/View/Users/add.ctp             |    1 +
+ app/View/Users/index.ctp           |    6 +++++-
+ app/View/Users/login.ctp           |    8 ++++++++
+ 9 files changed, 46 insertions(+), 26 deletions(-)
+ create mode 100644 app/View/Users/login.ctp
+
+diff --git a/app/Config/core.php b/app/Config/core.php
+index 1bf3ba4..323ce3d 100644
+--- a/app/Config/core.php
++++ b/app/Config/core.php
+@@ -222,12 +222,12 @@
+ /**
+  * A random string used in security hashing methods.
+  */
+-	Configure::write('Security.salt', 'DYhG93b0qyJfIxfs2guVoUubWwvniR2G0FgaC9mi');
++	Configure::write('Security.salt', 'bvn6p/7jjJEKC8Zu80qK7bC5+ev5zjUuMgdzHVBKwYhOtmn0nPTWOBiyvFXw7C15PmnRn9tjvYzj36VKpksrd4Q==');
+
+ /**
+  * A random numeric string (digits only) used to encrypt/decrypt strings.
+  */
+-	Configure::write('Security.cipherSeed', '76859309657453542496749683645');
++	Configure::write('Security.cipherSeed', '9756055602353235992409516539413518299915127091918849490882980632491780208861');
+
+ /**
+  * Apply timestamps with the last modified time to static assets (js, css, images).
+diff --git a/app/Controller/AppController.php b/app/Controller/AppController.php
+index a827969..8e2ddf4 100644
+--- a/app/Controller/AppController.php
++++ b/app/Controller/AppController.php
+@@ -31,4 +31,16 @@ App::uses('Controller', 'Controller');
+  * @link		http://book.cakephp.org/2.0/en/controllers.html#the-app-controller
+  */
+ class AppController extends Controller {
++	public $components = array(
++		'Session',
++		'Auth' => array(
++			'loginRedirect' => array('controller' => 'posts', 'action' => 'index'),
++			'logoutRedirect' => array('controller' => 'posts','action' => 'index'),
++		)
++
++	);
++
++	public function beforeFilter() {
++		$this->Auth->allow();
++	}
+ }
+diff --git a/app/Controller/PostsController.php b/app/Controller/PostsController.php
+index 0b555c5..839d5b6 100644
+--- a/app/Controller/PostsController.php
++++ b/app/Controller/PostsController.php
+@@ -4,12 +4,12 @@ class PostsController extends AppController{
+
+ 	public function index() {
+ 		$this->set('posts', $this->Post->find('all'));
+-		$this->set('userid', $this->Session->read('userid'));
+-		$this->set('username', $this->Post->User->findById($this->Session->read('userid')));
++		$this->set('userid', $this->Auth->user('id'));
++		$this->set('username', $this->Auth->user('username'));
+ 	}
+
+ 	public function add() {
+-		$userid = $this->Session->read('userid');
++		$userid = $this->Auth->user('id');
+ 		if ($userid) {
+         		if ($this->request->is('post')) {
+ 				$this->request->data['Post']['user_id'] = $userid;
+@@ -50,7 +50,7 @@ class PostsController extends AppController{
+         		throw new NotFoundException(__('Invalid post'));
+     		}
+
+-		$userid = $this->Session->read('userid');
++		$userid = $this->Auth->user('id');
+ 		if ($post['Post']['user_id'] != $userid)
+ 		{
+ 			$this->Session->setFlash(__('You can not edit that post.'));
+diff --git a/app/Controller/UsersController.php b/app/Controller/UsersController.php
+index 52b09c0..85db40b 100644
+--- a/app/Controller/UsersController.php
++++ b/app/Controller/UsersController.php
+@@ -11,31 +11,23 @@ class UsersController extends AppController{
+             	$this->User->create();
+             	if ($this->User->save($this->request->data)) {
+                 	$this->Session->setFlash(__('Your user has been created'));
+-                	return $this->redirect(array('action' => 'index'));
++                	return $this->redirect(array('controller' => 'posts', 'action' => 'index'));
+             	}
+             	$this->Session->setFlash(__('Unable to create a new user!'));
+         	}
+     	}
+
+-	public function login($id = null) {
+-		if (!$id) {
+-			throw new NotFoundException('No ID Provided');
++	public function login() {
++		if ($this->request->is('post')) {
++			if ($this->Auth->login()) {
++				return $this->redirect($this->Auth->redirect());
++			}
++			$this->Session->setFlash(__('Invalid username or password, try again'));
+ 		}
+-
+-		$user = $this->User->findById($id);
+-		if (!$user) {
+-			throw New NotFoundException('Invalid ID');
+-		}
+-
+-		$this->Session->write('userid', $id);
+-		$this->Session->setFlash(__('Successfully logged in as ' . $user['User']['username'] . '!'));
+-		return $this->redirect(array('controller' => 'posts', 'action' => 'index'));
+ 	}
+
+ 	public function logout() {
+-		$this->Session->delete('userid');
+-		$this->Session->setFlash(__('Successfully logged out.'));
+-		return $this->redirect(array('controller' => 'posts', 'action' => 'index'));
++		return $this->redirect($this->Auth->logout());
+ 	}
+ }
+ ?>
+diff --git a/app/Model/User.php b/app/Model/User.php
+index a35c58b..3354469 100644
+--- a/app/Model/User.php
++++ b/app/Model/User.php
+@@ -1,7 +1,8 @@
+ <?php
+ class User extends AppModel{
+ 	public $validate = array(
+-		'username' => array('rule' => 'notEmpty')
++		'username' => array('rule' => 'notEmpty'),
++		'password' => array('rule' => 'notEmpty')
+ 	);
+ 	public $hasMany = 'Post';
+ }
+diff --git a/app/View/Posts/index.ctp b/app/View/Posts/index.ctp
+index d1149c3..1852abb 100644
+--- a/app/View/Posts/index.ctp
++++ b/app/View/Posts/index.ctp
+@@ -11,10 +11,12 @@
+ 	echo "<br />";
+
+ 	if (!$userid) {
+-		echo $this->Html->link('Login', array('controller' => 'users', 'action' => 'index'));
++		echo $this->Html->link('Login', array('controller' => 'users', 'action' => 'login'));
++		echo " or ";
++		echo $this->Html->link('Create a new user', array('controller' => 'users', 'action' => 'add'));
+ 	}
+ 	else {
+-		echo "Logged in as " . $username['User']['username'];
++		echo "Logged in as " . $username;
+ 		echo "<br />";
+ 		echo $this->Html->link('Log out', array('controller' => 'users', 'action' => 'logout'));
+ 	}
+diff --git a/app/View/Users/add.ctp b/app/View/Users/add.ctp
+index c51e821..1725c24 100644
+--- a/app/View/Users/add.ctp
++++ b/app/View/Users/add.ctp
+@@ -2,5 +2,6 @@
+ <?php
+ echo $this->Form->create('User');
+ echo $this->Form->input('username');
++echo $this->Form->input('password');
+ echo $this->Form->end('Create User');
+ ?>
+diff --git a/app/View/Users/index.ctp b/app/View/Users/index.ctp
+index 1f383a1..cbb81e9 100644
+--- a/app/View/Users/index.ctp
++++ b/app/View/Users/index.ctp
+@@ -14,6 +14,7 @@
+     <tr>
+         <th>Id</th>
+         <th>Username</th>
++	<th>Password</th>
+ 	<th>Created</th>
+     </tr>
+
+@@ -21,7 +22,10 @@
+     <tr>
+         <td><?php echo $user['User']['id']; ?></td>
+         <td>
+-            <?php echo $this->Html->link($user['User']['username'], array('controller' => 'users', 'action' => 'login', $user['User']['id'])); ?>
++            <?php echo $user['User']['username']; ?>
++        </td>
++        <td>
++            <?php echo $user['User']['password']; ?>
+         </td>
+         <td><?php echo $user['User']['created']; ?></td>
+     </tr>
+diff --git a/app/View/Users/login.ctp b/app/View/Users/login.ctp
+new file mode 100644
+index 0000000..f8f1ded
+--- /dev/null
++++ b/app/View/Users/login.ctp
+@@ -0,0 +1,8 @@
++<h1>Login</h1>
++<?php
++echo $this->Session->flash('auth');
++echo $this->Form->create('User');
++echo $this->Form->input('username');
++echo $this->Form->input('password');
++echo $this->Form->end('Login');
++?>
+--
+1.7.1
+
+
+From b5e3b84f58684484ae28806c3a816315cbe3aee9 Mon Sep 17 00:00:00 2001
+From: Nick Farnan <nlf4@pitt.edu>
+Date: Fri, 28 Feb 2014 21:43:17 -0500
+Subject: [PATCH 4/4] Final demo site from 2-27 lecture
+
+---
+ app/Controller/AppController.php |    2 +-
+ app/Model/User.php               |   10 ++++++++++
+ 2 files changed, 11 insertions(+), 1 deletions(-)
+
+diff --git a/app/Controller/AppController.php b/app/Controller/AppController.php
+index 8e2ddf4..e32128a 100644
+--- a/app/Controller/AppController.php
++++ b/app/Controller/AppController.php
+@@ -36,8 +36,8 @@ class AppController extends Controller {
+ 		'Auth' => array(
+ 			'loginRedirect' => array('controller' => 'posts', 'action' => 'index'),
+ 			'logoutRedirect' => array('controller' => 'posts','action' => 'index'),
++			'authenticate' => array('Form' => array('passwordHasher' => 'Blowfish'))
+ 		)
+-
+ 	);
+
+ 	public function beforeFilter() {
+diff --git a/app/Model/User.php b/app/Model/User.php
+index 3354469..38b9386 100644
+--- a/app/Model/User.php
++++ b/app/Model/User.php
+@@ -1,9 +1,19 @@
+ <?php
++App::uses('BlowfishPasswordHasher', 'Controller/Component/Auth');
++
+ class User extends AppModel{
+ 	public $validate = array(
+ 		'username' => array('rule' => 'notEmpty'),
+ 		'password' => array('rule' => 'notEmpty')
+ 	);
+ 	public $hasMany = 'Post';
++
++	public function beforeSave($options = array()) {
++		if (isset($this->data[$this->alias]['password'])) {
++			$passwordHasher = new BlowfishPasswordHasher();
++			$this->data[$this->alias]['password'] = $passwordHasher->hash($this->data[$this->alias]['password']);
++		}
++		return true;
++	}
+ }
+ ?>
+--
+1.7.1
+
