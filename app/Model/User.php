@@ -6,8 +6,8 @@ class User extends AppModel{
 		'username' => array('rule' => 'notEmpty'),
 		'password' => array('rule' => 'notEmpty')
 	);
-	public $hasMany = 'Post';
-
+	//public $hasMany = 'Post';
+	public $hasMany = array('Post' ,'Review','Comment','Message');
 	public function beforeSave($options = array()) {
 		if (isset($this->data[$this->alias]['password'])) {
 			$passwordHasher = new BlowfishPasswordHasher();

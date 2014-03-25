@@ -1,0 +1,9 @@
+@Reviews:index
+
+
+@Reviews:add
+
+@Reviews:review
+comment:SendBy column should be username, not user id
+
+
