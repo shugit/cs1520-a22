@@ -31,29 +31,32 @@ class ReviewsController extends AppController{
 		if (!$id) {
 			throw new NotFoundException('Invalid post1');
 		}
-
+		//$userid = $this->Auth->user('id');
+		$this->set('userid', $this->Auth->user('id'));
 		$review = $this->Review->findById($id);
 		if (!$review) {
 			throw new NotFoundException('Invalid post2');
 		}
 
 		$this->set('review', $review);
+		$this->loadModel('User');
+		$this->set('users', $this->User->find('all'));
 	}
 
 	public function edit($id = null) {
 		if (!$id) {
-			throw new NotFoundException(__('Invalid post'));
+			throw new NotFoundException(__('Invalid review'));
 		}
 
 		$review = $this->Review->findById($id);
 		if (!$review) {
-			throw new NotFoundException(__('Invalid post'));
+			throw new NotFoundException(__('Invalid review'));
 		}
 
 		$userid = $this->Auth->user('id');
 		if ($review['Review']['user_id'] != $userid)
 		{
-			$this->Session->setFlash(__('You can not edit that post.'));
+			$this->Session->setFlash(__('You can not edit that review.'));
 			return $this->redirect(array('action' => 'index'));
 		}
 

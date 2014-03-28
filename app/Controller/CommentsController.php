@@ -6,9 +6,27 @@ class CommentsController extends AppController{
 		$this->set('comments', $this->Comment->find('all')); //<-------what is this ‘Post’?
 		$this->set('userid', $this->Auth->user('id'));
 		$this->set('username', $this->Auth->user('username'));
+		/*
+		$this->set('comments', $this->Comment->find('all', array(
+				//'conditions' => array('Comment.user_id' => $this->Auth->user('id')),
+				'joins' => array(
+						array(
+								'table' => 'users',
+								'alias' => 'User',
+								'type' => 'left',  //join of your choice left, right, or inner
+								'foreignKey' => true,
+								'conditions' => array('Comment.user_id=User.id')
+						)
+				)//,
+				//'order' => array('Message.created DESC')
+		))
+		);*/
+		$this->loadModel('User');
+		$this->set('users', $this->User->find('all'));
 	}
 
 	public function add($id = null) {
+		
 		$this->Session->setFlash('You are posting comment on review id '.$id);
 		if (!$id) {
 			throw new NotFoundException(__('Invalid review id'));
@@ -19,6 +37,7 @@ class CommentsController extends AppController{
 			throw new NotFoundException(__('Invalid review id'));
 		}
 		*/
+		$this->set('review_id', $id);
 		$userid = $this->Auth->user('id');
 		if ($userid) {
 			if ($this->request->is('post')) {
@@ -34,67 +53,58 @@ class CommentsController extends AppController{
 			} else {
 				//$this->Session->setFlash('Unable to add your comment.');
 			}
+		} else {
+			$this->Session->setFlash(__('You must be logged in to leave a comment.'));
+			//return $this->redirect(array('action' => 'index'));
+			return $this->redirect(array('controller' => 'reviews', 'action' => 'view', $id));
 		}
 
 
 	}
-
-	public function view($id = null) {
+	
+	public function edit($id = null) {
 		if (!$id) {
-			throw new NotFoundException('Invalid post1');
+			throw new NotFoundException(__('Invalid comment'));
 		}
-
+		
 		$comment = $this->Comment->findById($id);
-		if (!$review) {
-			throw new NotFoundException('Invalid post2');
+		if (!$comment) {
+			throw new NotFoundException(__('Invalid comment'));
+		}
+		$this->set('review_id', $comment['Comment']['review_id']);
+		$userid = $this->Auth->user('id');
+		if ($comment['Comment']['user_id'] != $userid)
+		{
+			$this->Session->setFlash(__('You can not edit that comment.'));
+			return $this->redirect(array('action' => 'index'));
 		}
 
-		$this->set('comment', $comment);
-	}
-	/*
-	 public function edit($id = null) {
-	if (!$id) {
-	throw new NotFoundException(__('Invalid post'));
-	}
+		if ($this->request->is(array('post', 'put'))) {
+			$this->Comment->id = $id;
+			if ($this->Comment->save($this->request->data)) {
+				$this->Session->setFlash(__('Your Comment has been updated.'));
+				return $this->redirect(array('action' => 'index'));
+			}
+			$this->Session->setFlash(__('Unable to update your Comment.'));
+		}
 
-	$review = $this->Review->findById($id);
-	if (!$review) {
-	throw new NotFoundException(__('Invalid post'));
-	}
-
-	$userid = $this->Auth->user('id');
-	if ($review['Review']['user_id'] != $userid)
-	{
-	$this->Session->setFlash(__('You can not edit that post.'));
-	return $this->redirect(array('action' => 'index'));
-	}
-
-	if ($this->request->is(array('post', 'put'))) {
-	$this->Post->id = $id;
-	if ($this->Post->save($this->request->data)) {
-	$this->Session->setFlash(__('Your post has been updated.'));
-	return $this->redirect(array('action' => 'index'));
-	}
-	$this->Session->setFlash(__('Unable to update your post.'));
-	}
-
-	if (!$this->request->data) {
-	$this->request->data = $post;
-	}
+		if (!$this->request->data) {
+			$this->request->data = $comment;
+		}
 	}
 
 	public function delete($id) {
-	if ($this->request->is('get')) {
-	throw new MethodNotAllowedException();
+		if ($this->request->is('get')) {
+			throw new MethodNotAllowedException();
+		}
+		$comment = $this->Comment->findById($id);
+		$review_id = $comment['Comment']['review_id'];
+		if ($this->Comment->delete($id)) {
+			$this->Session->setFlash(
+					__('The comment with id: %s has been deleted.', h($id))
+			);
+			return $this->redirect(array('controller' => 'reviews', 'action' => 'view',$review_id));
+		}
 	}
-
-	if ($this->Review->delete($id)) {
-	$this->Session->setFlash(
-			__('The reviw with id: %s has been deleted.', h($id))
-	);
-	return $this->redirect(array('action' => 'index'));
-	}
-	}
-	*/
 }
 ?>

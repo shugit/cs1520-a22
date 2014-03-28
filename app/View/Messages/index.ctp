@@ -1,8 +1,23 @@
 <?php
 	foreach ($messages as $message) {
-		print_r($message);
-		echo "<br />";
+		//print_r($message);
+		//echo "<br />";
 	}
+	
+	foreach ($users as $user) {
+		//print_r($user);
+		//echo "<br />";
+	}
+	$usernames = array();
+	foreach ($users as $user) {
+		//print_r($user);
+		$usernames[$user['User']['id']] = $user['User']['username'];		
+	}
+	//print_r($usernames);
+	//echo "<br />";
+	
+	
+	
 ?>
 <p><?php echo $this->Html->link('<-Back to review index', array('controller' => 'reviews', 'action' => 'index'));?></p>
 <h1>You Messages</h1>
@@ -24,17 +39,27 @@
 <table>
     <tr>        
         <th>Title</th>
-        <th>From UID</th>
+        <th>From</th>
 	<th>Options</th>
         <th>Created</th>
     </tr>
 
     <?php foreach ($messages as $message): ?>
+    <?php 
+//$users = $this['User'];
+//print_r($users);
+
+?>
     <tr>
      <td>
             <?php echo $this->Html->link($message['Message']['title'], array('controller' => 'messages', 'action' => 'view', $message['Message']['id'])); ?>
         </td>
-        <td><?php echo $message['Message']['from_id']; ?></td>
+        <td>
+        <?php echo $usernames[$message['Message']['from_id']]; 
+        
+        
+        ?>
+        </td>
        
 	<td>
             <?php

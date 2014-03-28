@@ -7,7 +7,8 @@ class Message extends AppModel {
 			'title' => array('rule' => 'notEmpty'),
 			'body' => array('rule' => 'notEmpty')
 	);
-	var $belongsTo = array('User'=>array('className'=>'User'));
+	//var $belongsTo = array('User'=>array('className'=>'User'));
+	public $belongsTo = 'User';
 	//public $hasOne = array(	'FromUser' => array('className' => 'User'));
 }
 ?>

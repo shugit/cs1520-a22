@@ -1,4 +1,4 @@
-<h1>Add Post</h1>
+<h1>Send Message</h1>
 <?php
 echo $this->Form->create('Message');
 echo $this->Form->input('id', array('type' => 'hidden'));

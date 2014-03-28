@@ -1,4 +1,4 @@
-<h1>Add Comment</h1>
+<h1>Edit Review</h1>
 <?php
 echo $this->Html->link('<-Back to review', array('controller' => 'reviews', 'action' => 'view',$review_id));
 echo $this->Form->create('Comment');

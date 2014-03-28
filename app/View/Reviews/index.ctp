@@ -1,7 +1,7 @@
 <?php
 	foreach ($reviews as $review) {
-		print_r($review);
-		echo "<br />";
+		//print_r($review);
+		//echo "<br />";
 	}
 ?>
 <h1>Reviews</h1>

@@ -4,6 +4,11 @@
 @Reviews:add
 
 @Reviews:review
-comment:SendBy column should be username, not user id
 
+@Review:add/edit
+rating is 0-9 for now
 
+@Message:index
+
+@Message:view
+display user id, should be username

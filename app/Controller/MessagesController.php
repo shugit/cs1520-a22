@@ -13,7 +13,7 @@ class MessagesController extends AppController{
 						array(
 								'table' => 'users',
 								'alias' => 'FromUser',
-								'type' => 'inner',  //join of your choice left, right, or inner
+								'type' => 'left',  //join of your choice left, right, or inner
 								'foreignKey' => true,
 								'conditions' => array('Message.from_id=FromUser.id')
 						),
@@ -21,7 +21,8 @@ class MessagesController extends AppController{
 				'order' => array('Message.created DESC')
 		))
 		);
-		
+		$this->loadModel('User');
+		$this->set('users', $this->User->find('all'));
 		
 	}
 
@@ -40,7 +41,7 @@ class MessagesController extends AppController{
 				if ($this->Message->save($this->request->data)) {
 					$this->Session->setFlash(__('Your message has been send.'));
 					//return $this->redirect(array('action' => 'index'));
-					return $this->redirect(array('controller' => 'reviews', 'action' => 'view', $id));
+					return $this->redirect(array('controller' => 'reviews', 'action' => 'index'));
 				}
 				$this->Session->setFlash(__('Unable to send your message.'));
 			}
@@ -48,7 +49,7 @@ class MessagesController extends AppController{
 		else {
 			$this->Session->setFlash(__('You must be logged in to send a message.'));
 			//return $this->redirect(array('action' => 'index'));
-			return $this->redirect(array('controller' => 'reviews', 'action' => 'view', $id));
+			return $this->redirect(array('controller' => 'reviews', 'action' => 'index'));
 		}
 	}
 
@@ -65,6 +66,8 @@ class MessagesController extends AppController{
 		}
 		//$this->Session->setFlash(__('message from '.$message->FromUser['username']));
 		$this->set('message', $message);
+		$this->loadModel('User');
+		$this->set('users', $this->User->find('all'));
 	}
 
 	public function edit($id = null) {
